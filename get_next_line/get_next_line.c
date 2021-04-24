@@ -1,6 +1,6 @@
 #include "get_next_line.h"
 
-#define	BUFFER_SIZE 4
+#define	BUFFER_SIZE 10000
 
 char	*ft_strchr(const char *str, int c)
 {
@@ -100,8 +100,8 @@ char	*split_save(char *save, int *flag)
 		tmp[len] = save[len];
 		len++;
 	}
-	//if (!ft_strchr(&save[len], '\n'))
-	//	(*flag) = 1;
+	if (ft_strchr(&save[len], '\n') || !save)
+		(*flag) = 1;
 	return (tmp);
 }
 
@@ -118,12 +118,16 @@ int	get_next_line(int fd, char **line)
 		return (-1);
 	*line = malloc(1);
 	*line[0] = 0;
-	tmp = malloc (sizeof(char) * 100);
 	if (ft_strchr(save, '\n'))
+	{
 		tmp = split_save(save, &flag);
+		save = split_save_after(save);
+	}
 	if (!ft_strchr(save, '\n') && flag == 0)
 		while (flag == 0 && (rd_cnt = read(fd, buf, BUFFER_SIZE)) > 0)
 		{
+			if (rd_cnt == 0)
+				break ;
 			buf[rd_cnt] = 0;
 			if (ft_strchr(buf, '\n'))
 				flag = 1;
@@ -153,3 +157,4 @@ int	main(void)
 		printf("%s\n", line);
 	return (0);
 }
+
