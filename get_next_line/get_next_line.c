@@ -1,6 +1,6 @@
 #include "get_next_line.h"
 
-#define BUFFER_SIZE 5
+#define	BUFFER_SIZE 4
 
 char	*ft_strchr(const char *str, int c)
 {
@@ -88,8 +88,7 @@ char	*split_save_after(char *save)
 	return (save);
 }
 
-//save を改行前と改行後に分ける
-char	*split_save(char *save)
+char	*split_save(char *save, int *flag)
 {
 	char	*tmp;
 	size_t	len;
@@ -101,49 +100,43 @@ char	*split_save(char *save)
 		tmp[len] = save[len];
 		len++;
 	}
+	//if (!ft_strchr(&save[len], '\n'))
+	//	(*flag) = 1;
 	return (tmp);
 }
 
 int	get_next_line(int fd, char **line)
 {
-	int			flag;
-	ssize_t		rd_cnt;
-	char		buf[BUFFER_SIZE + 1];
+	int		flag;
+	ssize_t	rd_cnt;
+	char	buf[BUFFER_SIZE + 1];
 	static char	*save;
-	char		*tmp;
-	int			check_flag;
+	char	*tmp;
 
-	check_flag = 0;
-	flag = 1;
-	//fd,line,BUFFER_SIZEが正しくなければreturn(-1)
+	flag = 0;
 	if (fd < 0 || !line || BUFFER_SIZE < 0)
 		return (-1);
-	//saveに情報を入れたい　save + buf
-    	//readがEOFでない(flagが１)　＆＆　saveに改行がない
-	while (flag == 1 && !ft_strchr(save, '\n') && check_flag == 0)
-	{
-       		//read(bufに)する
-		if ((rd_cnt = read(fd, buf, BUFFER_SIZE)) < 0)
-            	free(buf);//できなかった時free
-		buf[rd_cnt] = 0;
-		if (rd_cnt == 0)
+	*line = malloc(1);
+	*line[0] = 0;
+	tmp = malloc (sizeof(char) * 100);
+	if (ft_strchr(save, '\n'))
+		tmp = split_save(save, &flag);
+	if (!ft_strchr(save, '\n') && flag == 0)
+		while (flag == 0 && (rd_cnt = read(fd, buf, BUFFER_SIZE)) > 0)
 		{
-			flag = 0;
-			break ;
+			buf[rd_cnt] = 0;
+			if (ft_strchr(buf, '\n'))
+				flag = 1;
+			save = ft_strjoin(save, buf);
+			tmp = split_save(save, &flag);
+			save = split_save_after(save);
+			if ((*line) != 0)
+				*line = ft_strjoin(*line, tmp);
+			else
+				*line = tmp;
 		}
-        	//saveに過去のsaveとbufを足したものを代入 save = save + buf (strjoin)
-		save = ft_strjoin(save, buf);
-        	//(改行があったら)bufをフリーして、saveの内容をlineに移す。 line = save
-		tmp = malloc (sizeof(char) * 100);
-		tmp = split_save(save);
-		if (save != tmp)
-			check_flag = 1;
-		save = split_save_after(save);
-		//if (*line)
-		//	free(*line);
+	else
 		*line = tmp;
-	}
-	//saveに改行がる　→　改行までコピー
 	return (flag);
 }
 
