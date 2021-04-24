@@ -1,6 +1,6 @@
 #include "get_next_line.h"
 
-#define BUFFER_SIZE 100
+#define BUFFER_SIZE 5
 
 char	*ft_strchr(const char *str, int c)
 {
