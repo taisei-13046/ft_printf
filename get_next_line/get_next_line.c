@@ -1,6 +1,6 @@
 #include "get_next_line.h"
 
-#define	BUFFER_SIZE 10000
+#define BUFFER_SIZE 1000
 
 char	*ft_strchr(const char *str, int c)
 {
@@ -72,6 +72,18 @@ char	*ft_substr(char const *s, unsigned int start, size_t len)
 	return (p);
 }
 
+//void	save_free(char **save, size_t len)
+//{
+//	int	i;
+
+//	i = 0;
+//	while (i < len)
+//	{
+//		free(save[i]);
+//		i++;
+//	}
+//}
+
 char	*split_save_after(char *save)
 {
 	char	*tmp;
@@ -84,6 +96,9 @@ char	*split_save_after(char *save)
 		tmp[len] = save[len];
 		len++;
 	}
+	free(tmp);
+	tmp = NULL;
+	free(save);
 	save = ft_substr(&save[len], 1, ft_strlen(save));
 	return (save);
 }
@@ -109,7 +124,7 @@ int	get_next_line(int fd, char **line)
 {
 	int		flag;
 	ssize_t	rd_cnt;
-	char	buf[BUFFER_SIZE + 1];
+	char	*buf;
 	static char	*save;
 	char	*tmp;
 
@@ -123,6 +138,7 @@ int	get_next_line(int fd, char **line)
 		tmp = split_save(save, &flag);
 		save = split_save_after(save);
 	}
+	buf = (char *)malloc(sizeof(char) * (BUFFER_SIZE + 1));
 	if (!ft_strchr(save, '\n') && flag == 0)
 		while (flag == 0 && (rd_cnt = read(fd, buf, BUFFER_SIZE)) > 0)
 		{
@@ -132,15 +148,28 @@ int	get_next_line(int fd, char **line)
 			if (ft_strchr(buf, '\n'))
 				flag = 1;
 			save = ft_strjoin(save, buf);
+			free(buf);
 			tmp = split_save(save, &flag);
 			save = split_save_after(save);
 			if ((*line) != 0)
+			{
+				free(*line);
 				*line = ft_strjoin(*line, tmp);
+			}
 			else
+			{
+				free(*line);
 				*line = tmp;
+			}
 		}
 	else
+	{
+		free(*line);
 		*line = tmp;
+	}
+	if (flag == 0)
+		free(save);
+	free(buf);
 	return (flag);
 }
 
@@ -155,6 +184,6 @@ int	main(void)
 		return (0);
 	while (get_next_line(fd, &line) > 0)
 		printf("%s\n", line);
+	system("leaks a.out");
 	return (0);
 }
-
