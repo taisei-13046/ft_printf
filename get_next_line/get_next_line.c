@@ -1,6 +1,6 @@
 #include "get_next_line.h"
 
-#define BUFFER_SIZE 1000
+#define BUFFER_SIZE 8
 
 char	*ft_strchr(const char *str, int c)
 {
@@ -72,35 +72,25 @@ char	*ft_substr(char const *s, unsigned int start, size_t len)
 	return (p);
 }
 
-//void	save_free(char **save, size_t len)
-//{
-//	int	i;
-
-//	i = 0;
-//	while (i < len)
-//	{
-//		free(save[i]);
-//		i++;
-//	}
-//}
+void	safe_free(char *str)
+{
+	free(str);
+	str = NULL;
+}
 
 char	*split_save_after(char *save)
 {
-	char	*tmp;
 	size_t	len;
+	char	*tmp;
 
 	len = 0;
-	tmp = (char *)malloc(sizeof(char *) * (ft_strlen(save) + 1));
 	while (save[len] != '\n' && save[len])
-	{
-		tmp[len] = save[len];
 		len++;
-	}
-	free(tmp);
-	tmp = NULL;
+	//ここのfreeがめちゃめちゃ問題
+	tmp = ft_substr(&save[len], 1, ft_strlen(save));
 	free(save);
-	save = ft_substr(&save[len], 1, ft_strlen(save));
-	return (save);
+	save = NULL;
+	return (tmp);
 }
 
 char	*split_save(char *save, int *flag)
@@ -148,28 +138,28 @@ int	get_next_line(int fd, char **line)
 			if (ft_strchr(buf, '\n'))
 				flag = 1;
 			save = ft_strjoin(save, buf);
-			free(buf);
 			tmp = split_save(save, &flag);
 			save = split_save_after(save);
 			if ((*line) != 0)
 			{
-				free(*line);
+				safe_free(*line);
 				*line = ft_strjoin(*line, tmp);
+				safe_free(tmp);
 			}
 			else
 			{
-				free(*line);
+				safe_free(*line);
 				*line = tmp;
 			}
+			safe_free(buf);
 		}
 	else
 	{
-		free(*line);
+		safe_free(*line);
 		*line = tmp;
+		tmp = NULL;
 	}
-	if (flag == 0)
-		free(save);
-	free(buf);
+	safe_free(tmp);
 	return (flag);
 }
 
@@ -178,7 +168,6 @@ int	main(void)
 {
 	char	*line;
 	int		fd;
-
 	fd = open("test.txt", O_RDONLY);
 	if (fd == -1)
 		return (0);
