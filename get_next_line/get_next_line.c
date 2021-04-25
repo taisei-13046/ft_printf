@@ -1,7 +1,46 @@
 #include "get_next_line.h"
 #include <stdio.h>
 
-#define BUFFER_SIZE 5
+//#define BUFFER_SIZE 10000000
+
+size_t	ft_strlen(const char *str)
+{
+	size_t	i;
+
+	i = 0;
+	if (!str)
+		return (0);
+	while (str[i])
+		i++;
+	return (i);
+}
+
+static char	*sub_strcpy(char *str_a, char *src)
+{
+	int	i;
+
+	i = 0;
+	while (src[i])
+	{
+		str_a[i] = src[i];
+		i++;
+	}
+	str_a[i] = '\0';
+	return (str_a);
+}
+
+char	*ft_strdup(const char *str)
+{
+	char	*str_a;
+	char	*src;
+
+	src = (char *)str;
+	str_a = (char *)malloc((sizeof(char) * ft_strlen(src) + 1));
+	if (!str_a)
+		return (NULL);
+	str_a = sub_strcpy(str_a, src);
+	return (str_a);
+}
 
 char	*ft_strchr(const char *str, int c)
 {
@@ -15,18 +54,6 @@ char	*ft_strchr(const char *str, int c)
 		str++;
 	}
 	return ((char *)str);
-}
-
-size_t	ft_strlen(const char *str)
-{
-	size_t	i;
-
-	i = 0;
-	if (!str)
-		return (0);
-	while (str[i])
-		i++;
-	return (i);
 }
 
 char	*ft_strjoin(char const *s1, char const *s2)
@@ -95,8 +122,8 @@ char	*split_save_after(char *save)
 		len++;
 	tmp = ft_substr(&save[len], 1, ft_strlen(save));
 	//どういう時にここでfreeするのか？
-	free(save);
-	save = NULL;
+	//free(save);
+	//save = NULL;
 	return (tmp);
 }
 
@@ -119,11 +146,11 @@ char	*split_save(char *save, int *flag)
 
 int	get_next_line(int fd, char **line)
 {
-	int		flag;
-	ssize_t	rd_cnt;
-	char	*buf;
-	static char	*save;
-	char	*tmp;
+	int				flag;
+	ssize_t			rd_cnt;
+	char			*buf;
+	static char		*save;
+	char			*tmp;
 
 	flag = 0;
 	if (fd < 0 || !line || BUFFER_SIZE < 0)
@@ -160,30 +187,32 @@ int	get_next_line(int fd, char **line)
 				free(*line);
 				*line = tmp;
 			}
+			if (**line == 0)
+				*line = ft_strdup("");
 		}
 	else
 	{
 		free(*line);
 		*line = tmp;
 	}
-	if (flag == 0)
-		free(save);
+	//if (flag == 0)
+	//	free(save);
 	free(buf);
-	//printf("%d", flag);
+	//printf("%d : ", flag);
 	return (flag);
 }
 
-#include <stdio.h>
-int	main(void)
-{
-	char	*line;
-	int		fd;
+//#include <stdio.h>
+//int	main(void)
+//{
+//	char	*line;
+//	int		fd;
 
-	fd = open("test.txt", O_RDONLY);
-	if (fd == -1)
-		return (0);
-	while (get_next_line(fd, &line) > 0)
-		printf("%s\n", line);
-	system("leaks a.out");
-	return (0);
-}
+//	fd = open("test.txt", O_RDONLY);
+//	if (fd == -1)
+//		return (0);
+//	while (get_next_line(fd, &line) > 0)
+//		printf("%s\n", line);
+//	system("leaks a.out");
+//	return (0);
+//}
