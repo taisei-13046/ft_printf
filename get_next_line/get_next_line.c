@@ -1,7 +1,7 @@
 #include "get_next_line.h"
 #include <stdio.h>
 
-//#define BUFFER_SIZE 65
+#define BUFFER_SIZE 1
 
 size_t	ft_strlen(const char *str)
 {
@@ -178,14 +178,7 @@ int	get_next_line(int fd, char **line)
 			tmp = split_save(save, &flag);
 			save = split_save_after(save);
 			if ((*line) != 0)
-			{
-				if (rd_cnt != 1)
-				{
-					free(*line);
-					*line = NULL;
-				}
 				*line = ft_strjoin(*line, tmp);
-			}
 			else
 			{
 				free(*line);
@@ -207,23 +200,23 @@ int	get_next_line(int fd, char **line)
 	return (flag);
 }
 
-//#include <stdio.h>
-//int	main(void)
-//{
-//	char	*line;
-//	int		fd;
-//	int flag;
+#include <stdio.h>
+int	main(void)
+{
+	char	*line;
+	int		fd;
+	int flag;
 
-//	fd = open("test.txt", O_RDONLY);
-//	if (fd == -1)
-//		return (0);
-//	while ((flag = get_next_line(fd, &line)) > 0)
-//	{
-//		printf("%d: ", flag);
-//		printf("%s\n", line);
-//	}
-//	printf("%d: ", flag);
-//	printf("%s", line);
-//	system("leaks a.out");
-//	return (0);
-//}
+	fd = open("test.txt", O_RDONLY);
+	if (fd == -1)
+		return (0);
+	while ((flag = get_next_line(fd, &line)) > 0)
+	{
+		printf("%d: ", flag);
+		printf("%s\n", line);
+	}
+	printf("%d: ", flag);
+	printf("%s", line);
+	system("leaks a.out");
+	return (0);
+}
