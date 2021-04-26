@@ -1,5 +1,5 @@
 #include "get_next_line.h"
-#define BUFFER_SIZE 100
+//#define BUFFER_SIZE 100000000
 
 //utils
 
@@ -171,6 +171,7 @@ char	*read_get_next_line(char *save, int fd, int *flag, char **line)
 			*flag = 1;
 		save = ft_strjoin(save, buf);
 		tmp = split_save(save, flag);
+		save = split_save_after(save);
 		into_line(line, tmp);
 	}
 	if (rd_cnt == 0 && save)
@@ -207,28 +208,28 @@ int	get_next_line(int fd, char **line)
 }
 
 
-#include <sys/types.h>
-#include <stdio.h>
+//#include <sys/types.h>
+//#include <stdio.h>
 
-int    main(void)
-{
-    int        d = 1;
-    char    *line;
-    int        fd;
-    int        i = 1;
+//int    main(void)
+//{
+//    int        d = 1;
+//    char    *line;
+//    int        fd;
+//    int        i = 1;
 
-    fd = open("test.txt", O_RDONLY);
-    printf("BUFFER_SIZE: %d\n", BUFFER_SIZE);
-    while (d == 1)
-    {
-        printf("---%dline---\n", i);
-        d = get_next_line(fd, &line);
-        printf("%s\t", line);
-        free(line);
-        printf("d : %d\n", d);
-        i++;
-    }
-    close(fd);
-    // system("leaks a.out");
-    return (0);
-}
+//    fd = open("test.txt", O_RDONLY);
+//    printf("BUFFER_SIZE: %d\n", BUFFER_SIZE);
+//    while (d == 1)
+//    {
+//        printf("---%dline---\n", i);
+//        d = get_next_line(fd, &line);
+//        printf("%s\t", line);
+//        free(line);
+//        printf("d : %d\n", d);
+//        i++;
+//    }
+//    close(fd);
+//    // system("leaks a.out");
+//    return (0);
+//}
