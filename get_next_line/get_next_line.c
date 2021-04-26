@@ -1,7 +1,8 @@
 #include "get_next_line.h"
-#include <stdio.h>
+#define BUFFER_SIZE 100
 
-#define BUFFER_SIZE 1
+//utils
+
 
 size_t	ft_strlen(const char *str)
 {
@@ -100,17 +101,9 @@ char	*ft_substr(char const *s, unsigned int start, size_t len)
 	return (p);
 }
 
-//void	save_free(char **save, size_t len)
-//{
-//	int	i;
 
-//	i = 0;
-//	while (i < len)
-//	{
-//		free(save[i]);
-//		i++;
-//	}
-//}
+
+//get_next_line
 
 char	*split_save_after(char *save)
 {
@@ -121,9 +114,6 @@ char	*split_save_after(char *save)
 	while (save[len] != '\n' && save[len])
 		len++;
 	tmp = ft_substr(&save[len], 1, ft_strlen(save));
-	//どういう時にここでfreeするのか？
-	free(save);
-	save = NULL;
 	return (tmp);
 }
 
@@ -144,13 +134,56 @@ char	*split_save(char *save, int *flag)
 	return (tmp);
 }
 
+void	into_line(char **line, char *tmp)
+{
+	if ((*line) != 0)
+		*line = ft_strjoin(*line, tmp);
+	else
+	{
+		free(*line);
+		*line = NULL;
+		*line = tmp;
+	}
+	if (**line == 0)
+	{
+		free(*line);
+		*line = NULL;
+		*line = ft_strdup("");
+	}
+}
+
+char	*read_get_next_line(char *save, int fd, int *flag, char **line)
+{
+	char	*tmp;
+	char	*buf;
+	ssize_t		rd_cnt;
+
+	buf = (char *)malloc(sizeof(char) * (BUFFER_SIZE + 1));
+	while (*flag == 0 && (rd_cnt = read(fd, buf, BUFFER_SIZE)) > 0)
+	{
+		if (rd_cnt == 0)
+		{
+			*flag = 0;
+			break ;
+		}
+		buf[rd_cnt] = 0;
+		if (ft_strchr(buf, '\n'))
+			*flag = 1;
+		save = ft_strjoin(save, buf);
+		tmp = split_save(save, flag);
+		into_line(line, tmp);
+	}
+	if (rd_cnt == 0 && save)
+		*line = save;
+	free(buf);
+	return (save);
+}
+
 int	get_next_line(int fd, char **line)
 {
-	int				flag;
-	ssize_t			rd_cnt;
-	char			*buf;
-	static char		*save;
-	char			*tmp;
+	int			flag;
+	static char	*save;
+	char		*tmp;
 
 	flag = 0;
 	if (fd < 0 || !line || BUFFER_SIZE < 0)
@@ -162,61 +195,40 @@ int	get_next_line(int fd, char **line)
 		tmp = split_save(save, &flag);
 		save = split_save_after(save);
 	}
-	buf = (char *)malloc(sizeof(char) * (BUFFER_SIZE + 1));
 	if (!ft_strchr(save, '\n') && flag == 0)
-		while (flag == 0 && (rd_cnt = read(fd, buf, BUFFER_SIZE)) > 0)
-		{
-			if (rd_cnt == 0)
-			{
-				flag = 0;
-				break ;
-			}
-			buf[rd_cnt] = 0;
-			if (ft_strchr(buf, '\n'))
-				flag = 1;
-			save = ft_strjoin(save, buf);
-			tmp = split_save(save, &flag);
-			save = split_save_after(save);
-			if ((*line) != 0)
-				*line = ft_strjoin(*line, tmp);
-			else
-			{
-				free(*line);
-				*line = NULL;
-				*line = tmp;
-			}
-			if (**line == 0)
-				*line = ft_strdup("");
-		}
+		save = read_get_next_line(save, fd, &flag, line);
 	else
 	{
 		free(*line);
 		*line = NULL;
 		*line = tmp;
 	}
-	//if (flag == 0)
-	//	free(save);
-	free(buf);
 	return (flag);
 }
 
-#include <stdio.h>
-int	main(void)
-{
-	char	*line;
-	int		fd;
-	int flag;
 
-	fd = open("test.txt", O_RDONLY);
-	if (fd == -1)
-		return (0);
-	while ((flag = get_next_line(fd, &line)) > 0)
-	{
-		printf("%d: ", flag);
-		printf("%s\n", line);
-	}
-	printf("%d: ", flag);
-	printf("%s", line);
-	system("leaks a.out");
-	return (0);
+#include <sys/types.h>
+#include <stdio.h>
+
+int    main(void)
+{
+    int        d = 1;
+    char    *line;
+    int        fd;
+    int        i = 1;
+
+    fd = open("test.txt", O_RDONLY);
+    printf("BUFFER_SIZE: %d\n", BUFFER_SIZE);
+    while (d == 1)
+    {
+        printf("---%dline---\n", i);
+        d = get_next_line(fd, &line);
+        printf("%s\t", line);
+        free(line);
+        printf("d : %d\n", d);
+        i++;
+    }
+    close(fd);
+    // system("leaks a.out");
+    return (0);
 }
