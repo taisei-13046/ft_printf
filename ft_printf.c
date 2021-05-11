@@ -80,8 +80,19 @@ void	string_print(va_list *ap, t_flag *ans)
 
 	str = va_arg(*ap, char *);
 	//精度を考慮したlen
-	word_count(str, ans);
+	if (str != NULL)
+		word_count(str, ans);
 	//field は　ーlen
+	if (str == NULL)
+	{
+		str = "(null)";
+		if (ans->acc >= 6 || ans->acc == -1)
+			ans->putlen = 6;
+		else
+			ans->putlen = ans->acc;
+		//charと別の処理をしたい
+		ans->specific = -1;
+	}
 	if (ans->field != -1)
 		ans->field -= ans->putlen;
 	if (!ans->flag[1])
@@ -116,7 +127,7 @@ int	int_count(int num)
 	int	cnt;
 
 	cnt = 0;
-	if (num < 0)
+	if (num <= 0)
 	{
 		num *= -1;
 		cnt++;
@@ -187,17 +198,22 @@ void	ft_putnbr_un(unsigned long long n, t_flag *ans)
 	int			j;
 
 	i = 0;
-	while (n > 0)
+	if (n > 0)
 	{
-		j = n % 16;
-		n /= 16;
-		if (ans->specific == 6 || ans->specific == 2)
-			buf[i] = change_small[j];
-		if (ans->specific == 7)
-			buf[i] = change_large[j];
-		i++;
+		while (n > 0)
+		{
+			j = n % 16;
+			n /= 16;
+			if (ans->specific == 6 || ans->specific == 2)
+				buf[i] = change_small[j];
+			if (ans->specific == 7)
+				buf[i] = change_large[j];
+			i++;
+		}
+		buf[i] = '\0';
 	}
-	buf[i] = '\0';
+	else if (n == 0)
+		buf[0] = change_large[0];
 	while (i >= 0)
 	{
 		write(1, &buf[i], 1);
@@ -307,10 +323,18 @@ int	per_print(const char **format, va_list *ap, t_flag *ans)
 	else
 		percent_print(ans);
 	(*format)++;
+	if (ans->field == -1)
+		ans->field = 0;
 	if (ans->field != -1)
-		return (ans->putlen + ans->field + 1);
+		if (ans->specific == 0 || ans->specific == 1)
+			return (ans->putlen + ans->field + 1);
+		else
+			return (ans->putlen + ans->field);
 	else
-		return (ans->putlen + 1);
+		if (ans->specific == 0 || ans->specific == 1)
+			return (ans->putlen + 1);
+		else
+			return (ans->putlen + ans->field);
 }
 
 //mode==0 -> 最小フィールド幅　mode==1 -> 精度　*.*
@@ -387,7 +411,7 @@ void	write_percent(const char **format, int *return_num, va_list *ap)
 	//どの変換指定子が立っているか
 	ans.specific = ft_checkflag("cspdiuxX%", **format);
 	num = per_print(format, ap, &ans);
-	*return_num = num;
+	*return_num += num;
 }
 
 void	ft_print_str(const char **format, int *return_num)
@@ -428,172 +452,182 @@ int ft_printf(const char *format, ...)
 	va_end(ap);
 	return (return_num);
 }
-/*
+
 int main()
 {
 	int 	cnt;
 
-	printf("-------------printf---normal------------\n");
-	cnt = printf("abcd\n");
+	//printf("-------------printf---normal------------\n");
+	//cnt = printf("abcd\n");
+	//printf("                          %d\n", cnt);
+
+	//printf("-------------ft_printf------------\n");
+	//cnt = ft_printf("abcd\n");
+	//printf("                          %d\n", cnt);
+
+	//printf("-------------printf------char---------\n");
+	//cnt = printf("[%c]\n", 'a');
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%10c]\n", 'a');
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%-10c]\n", 'a');
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%0-10.5c]\n", 'a');
+	//printf("                          %d\n", cnt);
+
+	//printf("-------------ft_printf-----char-------\n");
+	//cnt = ft_printf("[%c]\n", 'a');
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%10c]\n", 'a');
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%-10c]\n", 'a');
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%0-10.5c]\n", 'a');
+	//printf("                          %d\n", cnt);
+
+	//printf("--------------printf---------str--------\n");
+	//cnt = printf("[%s]\n", "abc");
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%10s]\n", "abc");
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%10.5s]\n", "abc");
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%-10s]\n", "abc");
+	//printf("                          %d\n", cnt);
+	//cnt = printf("%.3s", NULL);
+	//printf("                          %d\n", cnt);
+
+	//printf("--------------ft_printf------str--------\n");
+	//cnt = ft_printf("[%s]\n", "abc");
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%10s]\n", "abc");
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%10.5s]\n", "abc");
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%-10s]\n", "abc");
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("%.3s", NULL);
+	//printf("                          %d\n", cnt);
+
+
+	//printf("------------printf----%%----------------\n");
+	//cnt = printf("[%%]\n");
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%10%]\n");
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%-10%]\n");
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%10.5%]\n");
+	//printf("                          %d\n", cnt);
+
+	//printf("------------ft_printf----%%----------------\n");
+	//cnt = ft_printf("[%%]\n");
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%10%]\n");
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%-10%]\n");
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%10.5%]\n");
+	//printf("                          %d\n", cnt);
+
+	//printf("------------printf----int----------------\n");
+	//cnt = printf("[%d]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%10d]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%-10d]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%10.5d]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%010d]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%d]\n", -123);
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%-10i]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%10.5d]\n", 123);
+	//printf("                          %d\n", cnt);
+	cnt = printf("%.6d", -3);
 	printf("                          %d\n", cnt);
 
-	printf("-------------ft_printf------------\n");
-	cnt = ft_printf("abcd\n");
+	//printf("------------ft_printf----int----------------\n");
+	//cnt = ft_printf("[%d]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%10d]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%-10d]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%10.5d]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%010d]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%d]\n", -123);
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%-10i]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%10.5d]\n", 123);
+	//printf("                          %d\n", cnt);
+	cnt = ft_printf("%.6d", -3);
 	printf("                          %d\n", cnt);
 
-	printf("-------------printf------char---------\n");
-	cnt = printf("[%c]\n", 'a');
-	printf("                          %d\n", cnt);
-	cnt = printf("[%10c]\n", 'a');
-	printf("                          %d\n", cnt);
-	cnt = printf("[%-10c]\n", 'a');
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%0-10.5c]\n", 'a');
-	printf("                          %d\n", cnt);
+	//printf("------------printf----unsignedint----------------\n");
+	//cnt = printf("[%x]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%10x]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%-10u]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%10.5X]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%010x]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%u]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%-10X]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = printf("this %x number", 0);
+	//printf("                          %d\n", cnt);
 
-	printf("-------------ft_printf-----char-------\n");
-	cnt = ft_printf("[%c]\n", 'a');
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%10c]\n", 'a');
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%-10c]\n", 'a');
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%0-10.5c]\n", 'a');
-	printf("                          %d\n", cnt);
+	//printf("------------ft_printf----unsignedint----------------\n");
+	//cnt = ft_printf("[%x]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%10x]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%-10u]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%10.5X]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%010x]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%u]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%-10X]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("this %x number", 0);
+	//printf("                          %d\n", cnt);
 
-	printf("--------------printf---------str--------\n");
-	cnt = printf("[%s]\n", "abc");
-	printf("                          %d\n", cnt);
-	cnt = printf("[%10s]\n", "abc");
-	printf("                          %d\n", cnt);
-	cnt = printf("[%10.5s]\n", "abc");
-	printf("                          %d\n", cnt);
-	cnt = printf("[%-10s]\n", "abc");
-	printf("                          %d\n", cnt);
+	//printf("------------printf----adress----------------\n");
+	//char	*buf;
+	//char	a[3] = "aaa";
 
-	printf("--------------ft_printf------str--------\n");
-	cnt = ft_printf("[%s]\n", "abc");
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%10s]\n", "abc");
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%10.5s]\n", "abc");
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%-10s]\n", "abc");
-	printf("                          %d\n", cnt);
+	//buf = &a;
+	//cnt = printf("[%p]\n", buf);
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%20p]\n", buf);
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%-10p]\n", buf);
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%020p]\n", buf);
+	//printf("                          %d\n", cnt);
 
-	printf("------------printf----%%----------------\n");
-	cnt = printf("[%%]\n");
-	printf("                          %d\n", cnt);
-	cnt = printf("[%10%]\n");
-	printf("                          %d\n", cnt);
-	cnt = printf("[%-10%]\n");
-	printf("                          %d\n", cnt);
-	cnt = printf("[%10.5%]\n");
-	printf("                          %d\n", cnt);
+	//printf("------------ft_printf----adress----------------\n");
+	//cnt = ft_printf("[%p]\n", buf);
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%20p]\n", buf);
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%-10p]\n", buf);
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%020p]\n", buf);
+	//printf("                          %d\n", cnt);
+}
 
-	printf("------------ft_printf----%%----------------\n");
-	cnt = ft_printf("[%%]\n");
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%10%]\n");
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%-10%]\n");
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%10.5%]\n");
-	printf("                          %d\n", cnt);
-
-	printf("------------printf----int----------------\n");
-	cnt = printf("[%d]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = printf("[%10d]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = printf("[%-10d]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = printf("[%10.5d]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = printf("[%010d]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = printf("[%d]\n", -123);
-	printf("                          %d\n", cnt);
-	cnt = printf("[%-10i]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = printf("[%10.5d]\n", 123);
-	printf("                          %d\n", cnt);
-
-	printf("------------ft_printf----int----------------\n");
-	cnt = ft_printf("[%d]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%10d]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%-10d]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%10.5d]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%010d]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%d]\n", -123);
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%-10i]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%10.5d]\n", 123);
-	printf("                          %d\n", cnt);
-
-	printf("------------printf----unsignedint----------------\n");
-	cnt = printf("[%x]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = printf("[%10x]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = printf("[%-10u]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = printf("[%10.5X]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = printf("[%010x]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = printf("[%u]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = printf("[%-10X]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = printf("[%10.5x]\n", 123);
-	printf("                          %d\n", cnt);
-
-	printf("------------ft_printf----unsignedint----------------\n");
-	cnt = ft_printf("[%x]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%10x]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%-10u]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%10.5X]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%010x]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%u]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%-10X]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%10.5x]\n", 123);
-	printf("                          %d\n", cnt);
-
-	printf("------------printf----adress----------------\n");
-	char	*buf;
-	char	a[3] = "aaa";
-
-	buf = &a;
-	cnt = printf("[%p]\n", buf);
-	printf("                          %d\n", cnt);
-	cnt = printf("[%20p]\n", buf);
-	printf("                          %d\n", cnt);
-	cnt = printf("[%-10p]\n", buf);
-	printf("                          %d\n", cnt);
-	cnt = printf("[%020p]\n", buf);
-	printf("                          %d\n", cnt);
-
-	printf("------------ft_printf----adress----------------\n");
-	cnt = ft_printf("[%p]\n", buf);
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%20p]\n", buf);
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%-10p]\n", buf);
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%020p]\n", buf);
-	printf("                          %d\n", cnt);
-}*/
