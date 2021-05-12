@@ -138,11 +138,15 @@ int	int_count(int num)
 	return (cnt);
 }
 
-void	ft_putnbr(long long int n, int mode)
+void	ft_putnbr(t_flag *ans, long long int n, int mode)
 {
 	char	num;
 	if (n == -2147483648)
 		write(1, "-2147483648", 12);
+	if (ans->acc == 0 && ans->field != -1 && n == 0)
+		write(1, " ", 1);
+	else if (ans->acc == 0 && n == 0)
+		return ;
 	else
 	{
 		if (n < 0)
@@ -152,36 +156,24 @@ void	ft_putnbr(long long int n, int mode)
 			n *= -1;
 		}
 		if (n >= 10)
-			ft_putnbr(n / 10, mode);
+			ft_putnbr(ans, n / 10, mode);
 		num = n % 10 + '0';
 		write(1, &num, 1);
 	}
 }
 
-void	ft_write_field(t_flag *ans, int mode, int flag)
+void	ft_write_field(t_flag *ans, int mode)
 {
 	int	i;
 
 	i = 0;
-	if (mode == 0 && ans->field > ans->putlen && ans->acc < ans->putlen)
-		ans->field -= ans->putlen;
-	else if (mode == 0 && ans->field > ans->putlen && ans->acc > ans->putlen)
+	//filed > 精度　> putlen の時の空文字
+	if (mode == 0 && (ans->field > ans->acc && ans->acc > ans->putlen))
 		ans->field -= ans->acc;
-	else if (mode == 1 && ans->field > ans->putlen && ans->acc < ans->putlen)
+	//filedがputlen以上の時の空文字
+	else if (mode == 0 && ans->field > ans->putlen)
 		ans->field -= ans->putlen;
-	else if (mode == 1 && ans->field > ans->putlen && ans->acc > ans->putlen)
-		ans->field = ans->field - ans->acc - 1;
-	else if (mode == 2 && ans->field > ans->putlen && ans->acc > ans->putlen)
-		ans->field = ans->field - ans->acc - ans->putlen;
-	else if (mode == 2 && flag == 1)
-		ans->field = ans->field - (ans->acc + ans->putlen - 1);
-	else if (mode == 2 && ans->field > ans->putlen)
-		ans->field -= ans->putlen;
-	else if (mode == 3 && flag == 1)
-		ans->field -= (ans->acc + 1);
-	else if (mode == 3)
-		ans->field -= ans->acc;
-	else if (mode == 4)
+	else if (mode == 1 && ans->field > ans->putlen)
 		ans->field -= ans->putlen;
 	else
 		ans->field = -1;
@@ -194,39 +186,30 @@ void	ft_write_zero(t_flag *ans, int mode, int flag)
 	int	i;
 
 	i = 0;
-	if (mode == 0 && ans->field < ans->acc && ans->acc > ans->putlen)
-	{
-		ans->acc -= ans->putlen;
-		while (i++ < ans->acc)
-			write(1, "0", 1);
-		ans->putlen += ans->acc;
-	}
-	else if (mode == 0 && ans->field < ans->acc)
-	{
-		while (i++ < ans->acc)
-			write(1, "0", 1);
-		ans->field += ans->acc;
-	}
-	else if (mode == 0 && ans->acc < ans->putlen)
-		return ;
-	else if (mode == 0)
+
+	if ((mode == 0 && ans->flag[0]) || (mode == 1 && ans->field > ans->acc))
 	{
 		ans->field -= ans->putlen;
 		while (i++ < ans->field)
 			write(1, "0", 1);
 	}
-	else if (mode == 1 && flag == 0)
+	else if ((mode == 0 || mode == 1 ) && ans->acc > ans->putlen)
+	{
+		if (flag == 0)
+			ans->acc -= ans->putlen;
+		else if (flag == 1)
+			ans->acc -= (ans->putlen - 1);
+		while (i++ < ans->acc)
+			write(1, "0", 1);
+		if (mode == 0)
+			ans->putlen += ans->acc;
+	}
+	else if (mode == 2)
 	{
 		ans->acc -= ans->putlen;
+		ans->field -= ans->acc;
 		while (i++ < ans->acc)
 			write(1, "0", 1);
-	}
-	else if (mode == 1 && flag == 1)
-	{
-		ans->acc = ans->acc - ans->putlen + 1;
-		while (i++ < ans->acc)
-			write(1, "0", 1);
-		ans->acc++;
 	}
 }
 
@@ -236,39 +219,25 @@ void	int_print(va_list *ap, t_flag *ans)
 	static int		flag;
 
 	num = va_arg(*ap, int);
-	//出力のカウント
-	/*-フラグがある条件*/
 	ans->putlen = int_count(num);
-	if (num < 0 && ((ans->flag[0] && ans->field > ans->putlen) || (ans->acc > ans->putlen)))
+	if (CHECK_MINUS)
 		flag = 1;
-	if (!ans->flag[1] && !ans->flag[0] && num >= 0)
-		ft_write_field(ans, 0, flag);
-	else if (!ans->flag[1] && !ans->flag[0] && num < 0)
-		ft_write_field(ans, 1, flag);
-	else if (!ans->flag[1] && ans->flag[0] && ans->field > ans->putlen && ans->acc > ans->putlen)
-		ft_write_field(ans, 3, flag);
-	else if (!ans->flag[1] && ans->flag[0] && ans->acc < ans->putlen)
-		ft_write_field(ans, 4, flag);
-	/*             num < 0             */
+	if (!ans->flag[1] && !ans->flag[0])
+		ft_write_field(ans, 0);
 	if (flag == 1)
 		write(1, "-", 1);
-	/*                0の出力                  */
-	if (ans->flag[0] && !ans->flag[1] && ans->field > ans->putlen)
+	if (flag == 1)
 		ft_write_zero(ans, 0, flag);
-	else if (ans->acc > ans->putlen)
+	else if (ans->flag[0])
 		ft_write_zero(ans, 1, flag);
-	if (num < 0 && flag == 1)
-		ft_putnbr(num, 0);
+	else if (ans->acc > ans->putlen)
+		ft_write_zero(ans, 2, flag);
+	if (flag == 1)
+		ft_putnbr(ans, num, 0);
 	else
-		ft_putnbr(num, 1);
+		ft_putnbr(ans, num, 1);
 	if (ans->flag[1])
-	{
-		ft_write_field(ans, 2, flag);
-		if (ans->field != -1 && flag == 1)
-			ans->field += (ans->acc - 1);
-		else if (ans->field != -1)
-			ans->field += ans->acc;
-	}
+		ft_write_field(ans, 1);
 }
 
 int	sixteen_count(unsigned long long num)
@@ -311,9 +280,9 @@ void	unsigned_print(va_list *ap, t_flag *ans)
 	while (ans->acc-- > 0)
 		write(1, "0", 1);
 	if (ans->specific == 5)
-		ft_putnbr(num, 0);
+		ft_putnbr(ans, num, 0);
 	else if (ans->specific == 6 || ans->specific == 7)
-		ft_putnbr(num, 0);
+		ft_putnbr(ans, num, 0);
 	if (ans->flag[1])
 		while (i++ < ans->field - ans->putlen)
 			write(1, " ", 1);
@@ -341,7 +310,7 @@ void	addres_print(va_list *ap, t_flag *ans)
 			write(1, " ", 1);
 	while (ans->acc-- > 0)
 		write(1, "0", 1);
-	ft_putnbr(num, 0);
+	ft_putnbr(ans, num, 0);
 	if (ans->flag[1])
 		while (i++ < ans->field - ans->putlen)
 			write(1, " ", 1);
@@ -375,7 +344,12 @@ int	per_print(const char **format, va_list *ap, t_flag *ans)
 	(*format)++;
 	if (ans->field == -1)
 		ans->field = 0;
-	if (ans->field != -1)
+	if (ans->specific == 3 || ans->specific == 4)
+		if (ans->acc != -1)
+			return (ans->putlen + ans->field + ans->acc);
+		else
+			return (ans->putlen + ans->field);
+	else if (ans->field != -1)
 		if (ans->specific == 0 || ans->specific == 1)
 			return (ans->putlen + ans->field + 1);
 		else
@@ -609,7 +583,11 @@ int main()
 	//printf("                          %d\n", cnt);
 	//cnt = printf("%08.3d", 8375);
 	//printf("                          %d\n", cnt);
-	cnt = printf("%010.5d", -216);
+	//cnt = printf("%08.5d", 0);
+	//printf("                          %d\n", cnt);
+	//cnt = printf("%05d", 43);
+	//printf("                          %d\n", cnt);
+	cnt = printf("[%-5.d]", 0);
 	printf("                          %d\n", cnt);
 
 	printf("------------ft_printf----int----------------\n");
@@ -637,11 +615,11 @@ int main()
 	//printf("                          %d\n", cnt);
 	//cnt = ft_printf("[%-3.7d]\n", -2375);
 	//printf("                          %d\n", cnt);
-	//cnt = printf("[%10.7d]\n", -2375);
+	//cnt = ft_printf("%08.5d", 0);
 	//printf("                          %d\n", cnt);
-	//cnt = ft_printf("%08.3d", 8375);
+	//cnt = ft_printf("%05d", 43);
 	//printf("                          %d\n", cnt);
-	cnt = ft_printf("%05d", 43, -216);
+	cnt = ft_printf("[%-5.d]", 0);
 	printf("                          %d\n", cnt);
 
 	//printf("------------printf----unsignedint----------------\n");
@@ -704,4 +682,5 @@ int main()
 	//cnt = ft_printf("[%020p]\n", buf);
 	//printf("                          %d\n", cnt);
 }
+
 
