@@ -162,18 +162,27 @@ void	ft_putnbr(t_flag *ans, long long int n, int mode)
 	}
 }
 
-void	ft_write_field(t_flag *ans, int mode)
+void	ft_write_field(t_flag *ans, int mode, int flag)
 {
 	int	i;
 
 	i = 0;
 	//filed > 精度　> putlen の時の空文字
-	if (mode == 0 && (ans->field > ans->acc && ans->acc > ans->putlen))
-		ans->field -= ans->acc;
+	if ((mode == 0 || mode == 1) && (ans->field > ans->acc && ans->acc > ans->putlen))
+	{
+		if (flag == 0)
+			ans->field -= ans->acc;
+		if (flag == 1)
+			ans->field -= (ans->acc + 1);
+	}
 	//filedがputlen以上の時の空文字
 	else if (mode == 0 && ans->field > ans->putlen)
 		ans->field -= ans->putlen;
-	else if (mode == 1 && ans->field > ans->putlen)
+	else if (mode == 1 && (ans->field > ans->putlen))
+		ans->field -= ans->putlen;
+	else if (mode == 2 && ans->flag[1] && (ans->field > ans->acc && ans->acc > ans->putlen))
+		ans->field -= (ans->acc + ans->putlen);
+	else if (mode == 2 && ans->field > ans->putlen)
 		ans->field -= ans->putlen;
 	else
 		ans->field = -1;
@@ -186,14 +195,7 @@ void	ft_write_zero(t_flag *ans, int mode, int flag)
 	int	i;
 
 	i = 0;
-
-	if ((mode == 0 && ans->flag[0]) || (mode == 1 && ans->field > ans->acc))
-	{
-		ans->field -= ans->putlen;
-		while (i++ < ans->field)
-			write(1, "0", 1);
-	}
-	else if ((mode == 0 || mode == 1 ) && ans->acc > ans->putlen)
+	if ((mode == 0 || mode == 1 ) && ans->acc > ans->putlen)
 	{
 		if (flag == 0)
 			ans->acc -= ans->putlen;
@@ -204,10 +206,17 @@ void	ft_write_zero(t_flag *ans, int mode, int flag)
 		if (mode == 0)
 			ans->putlen += ans->acc;
 	}
+	else if ((mode == 0 && ans->flag[0] && !ans->flag[1]) || (mode == 1 && ans->field > ans->acc && !ans->flag[1]))
+	{
+		ans->field -= ans->putlen;
+		while (i++ < ans->field)
+			write(1, "0", 1);
+	}
 	else if (mode == 2)
 	{
 		ans->acc -= ans->putlen;
-		ans->field -= ans->acc;
+		if (!ans->flag[1])
+			ans->field -= ans->acc;
 		while (i++ < ans->acc)
 			write(1, "0", 1);
 	}
@@ -223,7 +232,9 @@ void	int_print(va_list *ap, t_flag *ans)
 	if (CHECK_MINUS)
 		flag = 1;
 	if (!ans->flag[1] && !ans->flag[0])
-		ft_write_field(ans, 0);
+		ft_write_field(ans, 0, flag);
+	if (!ans->flag[1] && ans->flag[0] && ans->acc != -1)
+		ft_write_field(ans, 1, flag);
 	if (flag == 1)
 		write(1, "-", 1);
 	if (flag == 1)
@@ -237,7 +248,7 @@ void	int_print(va_list *ap, t_flag *ans)
 	else
 		ft_putnbr(ans, num, 1);
 	if (ans->flag[1])
-		ft_write_field(ans, 1);
+		ft_write_field(ans, 2, flag);
 }
 
 int	sixteen_count(unsigned long long num)
@@ -344,12 +355,7 @@ int	per_print(const char **format, va_list *ap, t_flag *ans)
 	(*format)++;
 	if (ans->field == -1)
 		ans->field = 0;
-	if (ans->specific == 3 || ans->specific == 4)
-		if (ans->acc != -1)
-			return (ans->putlen + ans->field + ans->acc);
-		else
-			return (ans->putlen + ans->field);
-	else if (ans->field != -1)
+	if (ans->field != -1)
 		if (ans->specific == 0 || ans->specific == 1)
 			return (ans->putlen + ans->field + 1);
 		else
@@ -476,7 +482,7 @@ int ft_printf(const char *format, ...)
 	va_end(ap);
 	return (return_num);
 }
-
+/*
 int main()
 {
 	int 	cnt;
@@ -583,11 +589,11 @@ int main()
 	//printf("                          %d\n", cnt);
 	//cnt = printf("%08.3d", 8375);
 	//printf("                          %d\n", cnt);
-	//cnt = printf("%08.5d", 0);
+	//cnt = printf("%0-8.5d", 34);
 	//printf("                          %d\n", cnt);
-	//cnt = printf("%05d", 43);
+	//cnt = printf("%0-8.5d", 0);
 	//printf("                          %d\n", cnt);
-	cnt = printf("[%-5.d]", 0);
+	cnt = printf("%-8.5d", 34);
 	printf("                          %d\n", cnt);
 
 	printf("------------ft_printf----int----------------\n");
@@ -615,11 +621,11 @@ int main()
 	//printf("                          %d\n", cnt);
 	//cnt = ft_printf("[%-3.7d]\n", -2375);
 	//printf("                          %d\n", cnt);
-	//cnt = ft_printf("%08.5d", 0);
+	//cnt = ft_printf("%0-8.5d", 34);
 	//printf("                          %d\n", cnt);
-	//cnt = ft_printf("%05d", 43);
+	//cnt = ft_printf("%0-8.5d", 0);
 	//printf("                          %d\n", cnt);
-	cnt = ft_printf("[%-5.d]", 0);
+	cnt = ft_printf("%-8.5d", 34);
 	printf("                          %d\n", cnt);
 
 	//printf("------------printf----unsignedint----------------\n");
@@ -682,5 +688,4 @@ int main()
 	//cnt = ft_printf("[%020p]\n", buf);
 	//printf("                          %d\n", cnt);
 }
-
-
+*/
