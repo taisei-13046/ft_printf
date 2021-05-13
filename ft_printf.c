@@ -264,39 +264,55 @@ int	sixteen_count(unsigned long long num)
 	return (cnt);
 }
 
+void	ft_putnbr_un(t_flag *ans, unsigned long long n)
+{
+	char		buf[18];
+	const char	change_small[16] = "0123456789abcdef";
+	const char	change_large[16] = "0123456789ABCDEF";
+	int			i;
+	int			j;
+
+	i = 0;
+	if (n > 0)
+	{
+		while (n > 0)
+		{
+			j = n % 16;
+			n /= 16;
+			if (ans->specific == 6 || ans->specific == 2)
+				buf[i] = change_small[j];
+			if (ans->specific == 7)
+				buf[i] = change_large[j];
+			i++;
+		}
+		buf[i] = '\0';
+	}
+	else if (n == 0)
+		buf[0] = change_large[0];
+	while (i >= 0)
+	{
+		write(1, &buf[i], 1);
+		i--;
+	}
+}
+
 void	unsigned_print(va_list *ap, t_flag *ans)
 {
-	int	num;
-	int	i;
+	long long unsigned	num;
 
 	num = va_arg(*ap, int);
-	ans->putlen = int_count(num);
-	if (ans->specific == 6 || ans->specific == 7)
-		ans->putlen = sixteen_count(num);
-	if (ans->acc != -1)
-		ans->acc -= ans->putlen;
-	else
-		ans->acc = 0;
-	if ((ans->flag[0] && !ans->flag[1]) || ans->flag[1])
-		ans->field -= ans->putlen;
-	if (!ans->flag[0] && !ans->flag[1] && ans->field != -1)
-		ans->field = ans->field - ans->putlen;
-	i = 0;
-	if (ans->flag[0] && !ans->flag[1])
-		while (i++ < ans->field - ans->putlen)
-			write(1, "0", 1);
-	else if (!ans->flag[0] && !ans->flag[1])
-		while (i++ < ans->field - ans->acc)
-			write(1, " ", 1);
-	while (ans->acc-- > 0)
-		write(1, "0", 1);
-	if (ans->specific == 5)
-		ft_putnbr(ans, num, 0);
-	else if (ans->specific == 6 || ans->specific == 7)
-		ft_putnbr(ans, num, 0);
+	ans->putlen = sixteen_count(num);
+	if (!ans->flag[1] && !ans->flag[0])
+		ft_write_field(ans, 0, 0);
+	if (!ans->flag[1] && ans->flag[0] && ans->acc != -1)
+		ft_write_field(ans, 1, 0);
+	else if (ans->flag[0])
+		ft_write_zero(ans, 1, 0);
+	else if (ans->acc > ans->putlen)
+		ft_write_zero(ans, 2, 0);
+		ft_putnbr_un(ans, num);
 	if (ans->flag[1])
-		while (i++ < ans->field - ans->putlen)
-			write(1, " ", 1);
+		ft_write_field(ans, 2, 0);
 }
 
 void	addres_print(va_list *ap, t_flag *ans)
@@ -343,11 +359,11 @@ int	per_print(const char **format, va_list *ap, t_flag *ans)
 	//%pの処理
 	else if (ans->specific == 2)
 		addres_print(ap, ans);
-	//%d %iの処理
-	else if (ans->specific == 3 || ans->specific == 4)
+	//%d %i %uの処理
+	else if (ans->specific >= 3 && ans->specific <= 5)
 		int_print(ap, ans);
-	////%u %x %X の処理
-	else if (ans->specific >= 5 && ans->specific <= 7)
+	////%x %X の処理
+	else if (ans->specific == 6 || ans->specific == 7)
 		unsigned_print(ap, ans);
 	////%%の処理
 	else
@@ -560,7 +576,7 @@ int main()
 	//cnt = ft_printf("[%10.5%]\n");
 	//printf("                          %d\n", cnt);
 
-	printf("------------printf----int----------------\n");
+	//printf("------------printf----int----------------\n");
 	//cnt = printf("[%d]\n", 123);
 	//printf("                          %d\n", cnt);
 	//cnt = printf("[%10d]\n", 123);
@@ -593,10 +609,10 @@ int main()
 	//printf("                          %d\n", cnt);
 	//cnt = printf("%0-8.5d", 0);
 	//printf("                          %d\n", cnt);
-	cnt = printf("%-8.5d", 34);
-	printf("                          %d\n", cnt);
+	//cnt = printf("%-8.5d", 34);
+	//printf("                          %d\n", cnt);
 
-	printf("------------ft_printf----int----------------\n");
+	//printf("------------ft_printf----int----------------\n");
 	//cnt = ft_printf("[%d]\n", 123);
 	//printf("                          %d\n", cnt);
 	//cnt = ft_printf("[%10d]\n", 123);
@@ -625,44 +641,44 @@ int main()
 	//printf("                          %d\n", cnt);
 	//cnt = ft_printf("%0-8.5d", 0);
 	//printf("                          %d\n", cnt);
-	cnt = ft_printf("%-8.5d", 34);
+	//cnt = ft_printf("%-8.5d", 34);
+	//printf("                          %d\n", cnt);
+
+	printf("------------printf----unsignedint----------------\n");
+	cnt = printf("[%x]\n", 123);
+	printf("                          %d\n", cnt);
+	cnt = printf("[%10x]\n", 123);
+	printf("                          %d\n", cnt);
+	cnt = printf("[%-10u]\n", 123);
+	printf("                          %d\n", cnt);
+	cnt = printf("[%10.5X]\n", 123);
+	printf("                          %d\n", cnt);
+	cnt = printf("[%010x]\n", 123);
+	printf("                          %d\n", cnt);
+	cnt = printf("[%u]\n", 4294967295);
+	printf("                          %d\n", cnt);
+	cnt = printf("[%-10X]\n", 123);
+	printf("                          %d\n", cnt);
+	cnt = printf("this %x number", 0);
 	printf("                          %d\n", cnt);
 
-	//printf("------------printf----unsignedint----------------\n");
-	//cnt = printf("[%x]\n", 123);
-	//printf("                          %d\n", cnt);
-	//cnt = printf("[%10x]\n", 123);
-	//printf("                          %d\n", cnt);
-	//cnt = printf("[%-10u]\n", 123);
-	//printf("                          %d\n", cnt);
-	//cnt = printf("[%10.5X]\n", 123);
-	//printf("                          %d\n", cnt);
-	//cnt = printf("[%010x]\n", 123);
-	//printf("                          %d\n", cnt);
-	//cnt = printf("[%u]\n", 123);
-	//printf("                          %d\n", cnt);
-	//cnt = printf("[%-10X]\n", 123);
-	//printf("                          %d\n", cnt);
-	//cnt = printf("this %x number", 0);
-	//printf("                          %d\n", cnt);
-
-	//printf("------------ft_printf----unsignedint----------------\n");
-	//cnt = ft_printf("[%x]\n", 123);
-	//printf("                          %d\n", cnt);
-	//cnt = ft_printf("[%10x]\n", 123);
-	//printf("                          %d\n", cnt);
-	//cnt = ft_printf("[%-10u]\n", 123);
-	//printf("                          %d\n", cnt);
-	//cnt = ft_printf("[%10.5X]\n", 123);
-	//printf("                          %d\n", cnt);
-	//cnt = ft_printf("[%010x]\n", 123);
-	//printf("                          %d\n", cnt);
-	//cnt = ft_printf("[%u]\n", 123);
-	//printf("                          %d\n", cnt);
-	//cnt = ft_printf("[%-10X]\n", 123);
-	//printf("                          %d\n", cnt);
-	//cnt = ft_printf("this %x number", 0);
-	//printf("                          %d\n", cnt);
+	printf("------------ft_printf----unsignedint----------------\n");
+	cnt = ft_printf("[%x]\n", 123);
+	printf("                          %d\n", cnt);
+	cnt = ft_printf("[%10x]\n", 123);
+	printf("                          %d\n", cnt);
+	cnt = ft_printf("[%-10u]\n", 123);
+	printf("                          %d\n", cnt);
+	cnt = ft_printf("[%10.5X]\n", 123);
+	printf("                          %d\n", cnt);
+	cnt = ft_printf("[%010x]\n", 123);
+	printf("                          %d\n", cnt);
+	cnt = ft_printf("[%u]\n", 4294967295);
+	printf("                          %d\n", cnt);
+	cnt = ft_printf("[%-10X]\n", 123);
+	printf("                          %d\n", cnt);
+	cnt = ft_printf("this %x number", 0);
+	printf("                          %d\n", cnt);
 
 	//printf("------------printf----adress----------------\n");
 	//char	*buf;
@@ -687,5 +703,4 @@ int main()
 	//printf("                          %d\n", cnt);
 	//cnt = ft_printf("[%020p]\n", buf);
 	//printf("                          %d\n", cnt);
-}
-*/
+}*/
