@@ -34,7 +34,7 @@ int	ft_isdigit(int c)
 	return (0);
 }
 
-void	char_print(va_list *ap, t_flag *ans)
+void	char_print(va_list *ap, t_flag *ans, int *return_num)
 {
 	char	str;
 	int		i;
@@ -50,12 +50,12 @@ void	char_print(va_list *ap, t_flag *ans)
 	i = 0;
 	if (!ans->flag[1])
 		while (i++ < ans->field)
-			write(1, " ", 1);
-	write(1, &str, 1);
+			*return_num += write(1, " ", 1);
+	*return_num += write(1, &str, 1);
 	//flagが存在する
 	if (ans->flag[1])
 		while (i++ < ans->field)
-			write(1, " ", 1);
+			*return_num += write(1, " ", 1);
 }
 
 void	word_count(char *str, t_flag *ans)
@@ -66,16 +66,37 @@ void	word_count(char *str, t_flag *ans)
 		ans->putlen = ans->acc;
 }
 
-void	string_print(va_list *ap, t_flag *ans)
+void	ft_str_field_zero(t_flag *ans, int mode, int *return_num)
+{
+	int	i;
+
+	i = 0;
+	if (mode == 0)
+	{
+		ans->field -= ans->putlen;
+		while (i++ < ans->field)
+			*return_num += write(1, "0", 1);
+	}
+	if (mode == 1)
+	{
+		while (i++ < ans->field)
+			*return_num += write(1, " ", 1);
+	}
+	if (mode == 2)
+	{
+		while (i++ < ans->field)
+			*return_num += write(1, " ", 1);
+	}
+}
+
+void	string_print(va_list *ap, t_flag *ans, int *return_num)
 {
 	char	*str;
 	int		i;
 
 	str = va_arg(*ap, char *);
-	//精度を考慮したlen
 	if (str != NULL)
 		word_count(str, ans);
-	//field は　ーlen
 	if (str == NULL)
 	{
 		str = "(null)";
@@ -83,24 +104,23 @@ void	string_print(va_list *ap, t_flag *ans)
 			ans->putlen = 6;
 		else
 			ans->putlen = ans->acc;
-		//charと別の処理をしたい
 		ans->specific = -1;
 	}
+	if (ans->flag[0] && !ans->flag[1] && ans->field > ans->putlen)
+		ft_str_field_zero(ans, 0, return_num);
 	if (ans->field != -1)
 		ans->field -= ans->putlen;
 	i = 0;
 	if (!ans->flag[1])
-		while (i++ < ans->field)
-			write(1, " ", 1);
-	write(1, str, ans->putlen);
+		ft_str_field_zero(ans, 1, return_num);
+	*return_num += write(1, str, ans->putlen);
 	if (ans->flag[1])
-		while (i++ < ans->field)
-			write(1, " ", 1);
+		ft_str_field_zero(ans, 2, return_num);
 	if (ans->acc != -1)
 		ans->putlen += ans->acc;
 }
 
-void	percent_print(t_flag *ans)
+void	percent_print(t_flag *ans, int *return_num)
 {
 	int	cnt;
 
@@ -108,14 +128,14 @@ void	percent_print(t_flag *ans)
 	cnt = ans->field;
 	if (ans->flag[0] && !ans->flag[1])
 		while (cnt-- > 1)
-			write(1, "0", 1);
+			*return_num += write(1, "0", 1);
 	else if (!ans->flag[0] && !ans->flag[1])
 		while (cnt-- > 1)
-			write(1, " ", 1);
-	write(1, "%%", 1);
+			*return_num += write(1, " ", 1);
+	*return_num += write(1, "%%", 1);
 	if (ans->flag[1])
 		while (cnt-- > 1)
-			write(1, " ", 1);
+			*return_num += write(1, " ", 1);
 	if (ans->field != -1)
 		ans->field--;
 }
@@ -138,13 +158,14 @@ int	int_count(int num)
 	return (cnt);
 }
 
-void	ft_putnbr(t_flag *ans, long long int n, int mode)
+void	ft_putnbr(t_flag *ans, long long int n, int mode, int *return_num)
 {
 	char	num;
+
 	if (n == -2147483648)
-		write(1, "-2147483648", 12);
+		*return_num += write(1, "-2147483648", 12);
 	if (ans->acc == 0 && ans->field != -1 && n == 0)
-		write(1, " ", 1);
+		*return_num += write(1, " ", 1);
 	else if (ans->acc == 0 && n == 0)
 		return ;
 	else
@@ -152,17 +173,17 @@ void	ft_putnbr(t_flag *ans, long long int n, int mode)
 		if (n < 0)
 		{
 			if (mode == 1)
-				write(1, "-", 1);
+				*return_num += write(1, "-", 1);
 			n *= -1;
 		}
 		if (n >= 10)
-			ft_putnbr(ans, n / 10, mode);
+			ft_putnbr(ans, n / 10, mode, return_num);
 		num = n % 10 + '0';
-		write(1, &num, 1);
+		*return_num += write(1, &num, 1);
 	}
 }
 
-void	ft_write_field(t_flag *ans, int mode, int flag)
+void	ft_write_field(t_flag *ans, int mode, int flag, int *return_num)
 {
 	int	i;
 
@@ -178,7 +199,7 @@ void	ft_write_field(t_flag *ans, int mode, int flag)
 	//filedがputlen以上の時の空文字
 	else if (mode == 0 && ans->field > ans->putlen)
 		ans->field -= ans->putlen;
-	else if (mode == 1 && (ans->field > ans->putlen))
+	else if (mode == 1 && (ans->field > ans->putlen && ans->acc < ans->field))
 		ans->field -= ans->putlen;
 	else if (mode == 2 && ans->flag[1] && (ans->field > ans->acc && ans->acc > ans->putlen))
 		ans->field -= (ans->acc + ans->putlen);
@@ -187,10 +208,10 @@ void	ft_write_field(t_flag *ans, int mode, int flag)
 	else
 		ans->field = -1;
 	while (i++ < ans->field)
-		write(1, " ", 1);
+		*return_num += write(1, " ", 1);
 }
 
-void	ft_write_zero(t_flag *ans, int mode, int flag)
+void	ft_write_zero(t_flag *ans, int mode, int flag, int *return_num)
 {
 	int	i;
 
@@ -202,15 +223,16 @@ void	ft_write_zero(t_flag *ans, int mode, int flag)
 		else if (flag == 1)
 			ans->acc -= (ans->putlen - 1);
 		while (i++ < ans->acc)
-			write(1, "0", 1);
+			*return_num += write(1, "0", 1);
 		if (mode == 0)
 			ans->putlen += ans->acc;
 	}
-	else if ((mode == 0 && ans->flag[0] && !ans->flag[1]) || (mode == 1 && ans->field > ans->acc && !ans->flag[1]))
+	else if ((mode == 0 && ans->flag[0] && !ans->flag[1])
+		|| (mode == 1 && ans->field > ans->acc && !ans->flag[1]))
 	{
 		ans->field -= ans->putlen;
 		while (i++ < ans->field)
-			write(1, "0", 1);
+			*return_num += write(1, "0", 1);
 	}
 	else if (mode == 2)
 	{
@@ -218,53 +240,68 @@ void	ft_write_zero(t_flag *ans, int mode, int flag)
 		if (!ans->flag[1])
 			ans->field -= ans->acc;
 		while (i++ < ans->acc)
-			write(1, "0", 1);
+			*return_num += write(1, "0", 1);
 	}
 }
 
-void	int_print(va_list *ap, t_flag *ans)
+void	int_print(va_list *ap, t_flag *ans, int *return_num)
 {
-	long long int	num;
-	static int		flag;
+	long long	num;
+	static int	flag;
 
 	num = va_arg(*ap, int);
 	ans->putlen = int_count(num);
 	if (CHECK_MINUS)
 		flag = 1;
 	if (!ans->flag[1] && !ans->flag[0])
-		ft_write_field(ans, 0, flag);
+		ft_write_field(ans, 0, flag, return_num);
 	if (!ans->flag[1] && ans->flag[0] && ans->acc != -1)
-		ft_write_field(ans, 1, flag);
+		ft_write_field(ans, 1, flag, return_num);
 	if (flag == 1)
-		write(1, "-", 1);
+		*return_num += write(1, "-", 1);
 	if (flag == 1)
-		ft_write_zero(ans, 0, flag);
+		ft_write_zero(ans, 0, flag, return_num);
 	else if (ans->flag[0])
-		ft_write_zero(ans, 1, flag);
+		ft_write_zero(ans, 1, flag, return_num);
 	else if (ans->acc > ans->putlen)
-		ft_write_zero(ans, 2, flag);
+		ft_write_zero(ans, 2, flag, return_num);
 	if (flag == 1)
-		ft_putnbr(ans, num, 0);
+		ft_putnbr(ans, num, 0, return_num);
 	else
-		ft_putnbr(ans, num, 1);
+		ft_putnbr(ans, num, 1, return_num);
 	if (ans->flag[1])
-		ft_write_field(ans, 2, flag);
+		ft_write_field(ans, 2, flag, return_num);
 }
 
-int	sixteen_count(unsigned long long num)
+int	sixteen_count(unsigned long long num, t_flag *ans)
 {
 	int	cnt;
 
 	cnt = 0;
+	if (ans->specific == 2 && (ans->acc == 0 || num == 0))
+	{
+		if (ans->acc == 0)
+			return (2);
+		if (num == 0 && ans->acc != -1)
+			return (1);
+		if (num == 0)
+			return (3);
+	}
+	if (ans->acc == 0)
+		return (0);
+	if (num == 0)
+		return (1);
 	while (num > 0)
 	{
 		num /= 16;
 		cnt++;
 	}
+	if (ans->specific == 2 && ans->field > ans->acc)
+		return (cnt + 2);
 	return (cnt);
 }
 
-void	ft_putnbr_un(t_flag *ans, unsigned long long n)
+void	ft_putnbr_un(t_flag *ans, unsigned long long n, int *return_num)
 {
 	char		buf[18];
 	const char	change_small[16] = "0123456789abcdef";
@@ -272,115 +309,93 @@ void	ft_putnbr_un(t_flag *ans, unsigned long long n)
 	int			i;
 	int			j;
 
+	if (ans->acc == 0)
+		return ;
+	if (n == 0)
+		*return_num += write(1, "0", 1);
 	i = 0;
-	if (n > 0)
+	while (n > 0)
 	{
-		while (n > 0)
-		{
-			j = n % 16;
-			n /= 16;
-			if (ans->specific == 6 || ans->specific == 2)
-				buf[i] = change_small[j];
-			if (ans->specific == 7)
-				buf[i] = change_large[j];
-			i++;
-		}
+		j = n % 16;
+		n /= 16;
+		if (ans->specific == 6 || ans->specific == 2)
+			buf[i] = change_small[j];
+		if (ans->specific == 7)
+			buf[i] = change_large[j];
+		i++;
+	}
 		buf[i] = '\0';
-	}
-	else if (n == 0)
-		buf[0] = change_large[0];
-	while (i >= 0)
-	{
-		write(1, &buf[i], 1);
-		i--;
-	}
+	while (i-- > 0)
+		*return_num += write(1, &buf[i], 1);
 }
 
-void	unsigned_print(va_list *ap, t_flag *ans)
+void	unsigned_print(va_list *ap, t_flag *ans, int *return_num)
 {
 	long long unsigned	num;
 
 	num = va_arg(*ap, int);
-	ans->putlen = sixteen_count(num);
+	ans->putlen = sixteen_count(num, ans);
 	if (!ans->flag[1] && !ans->flag[0])
-		ft_write_field(ans, 0, 0);
+		ft_write_field(ans, 0, 0, return_num);
 	if (!ans->flag[1] && ans->flag[0] && ans->acc != -1)
-		ft_write_field(ans, 1, 0);
-	else if (ans->flag[0])
-		ft_write_zero(ans, 1, 0);
+		ft_write_field(ans, 1, 0, return_num);
+	if (ans->flag[0])
+		ft_write_zero(ans, 1, 0, return_num);
 	else if (ans->acc > ans->putlen)
-		ft_write_zero(ans, 2, 0);
-		ft_putnbr_un(ans, num);
+		ft_write_zero(ans, 2, 0, return_num);
+		ft_putnbr_un(ans, num, return_num);
 	if (ans->flag[1])
-		ft_write_field(ans, 2, 0);
+		ft_write_field(ans, 2, 0, return_num);
 }
 
-void	addres_print(va_list *ap, t_flag *ans)
+void	addres_print(va_list *ap, t_flag *ans, int *return_num)
 {
-	unsigned long long	num;
-	int					i;
+	long long unsigned	num;
 
-	num = (unsigned long long)va_arg(*ap, void *);
-	ans->putlen = sixteen_count(num);
-	if ((ans->flag[0] && !ans->flag[1]) || ans->flag[1])
-		ans->field = ans->field - ans->putlen - 2;
-	if (!ans->flag[0] && !ans->flag[1] && ans->field != -1)
-		ans->field = ans->field - ans->putlen - 2;
-	i = 0;
-	write(1, "0x", 2);
-	ans->putlen += 2;
-	if (ans->flag[0] && !ans->flag[1])
-		while (i++ < ans->field)
-			write(1, "0", 1);
-	else if (!ans->flag[0] && !ans->flag[1])
-		while (i++ < ans->field - ans->acc)
-			write(1, " ", 1);
-	while (ans->acc-- > 0)
-		write(1, "0", 1);
-	ft_putnbr(ans, num, 0);
+	num = va_arg(*ap, int);
+	ans->putlen = sixteen_count(num, ans);
+	if (!ans->flag[1] && !ans->flag[0])
+		ft_write_field(ans, 0, 0, return_num);
+	if (!ans->flag[1] && ans->flag[0] && ans->acc != -1)
+		ft_write_field(ans, 1, 0, return_num);
+	*return_num += write(1, "0x", 2);
+	if (ans->flag[0])
+		ft_write_zero(ans, 1, 0, return_num);
+	else if (ans->acc > ans->putlen)
+		ft_write_zero(ans, 2, 0, return_num);
+		ft_putnbr_un(ans, num, return_num);
 	if (ans->flag[1])
-		while (i++ < ans->field - ans->putlen)
-			write(1, " ", 1);
-	if (ans->field < -1)
-		ans->field = -1;
+		ft_write_field(ans, 2, 0, return_num);
 }
 
 int	per_print(const char **format, va_list *ap, t_flag *ans)
 {
+	int	return_num;
+
+	return_num = 0;
 	//指定子がない -> error
 	if (ans->specific == -1)
 		return (-1);
 	//%cの処理
 	if (ans->specific == 0)
-		char_print(ap, ans);
+		char_print(ap, ans, &return_num);
 	//%sの処理
 	else if (ans->specific == 1)
-		string_print(ap, ans);
+		string_print(ap, ans, &return_num);
 	//%pの処理
 	else if (ans->specific == 2)
-		addres_print(ap, ans);
+		addres_print(ap, ans, &return_num);
 	//%d %i %uの処理
 	else if (ans->specific >= 3 && ans->specific <= 5)
-		int_print(ap, ans);
+		int_print(ap, ans, &return_num);
 	////%x %X の処理
 	else if (ans->specific == 6 || ans->specific == 7)
-		unsigned_print(ap, ans);
+		unsigned_print(ap, ans, &return_num);
 	////%%の処理
 	else
-		percent_print(ans);
+		percent_print(ans, &return_num);
 	(*format)++;
-	if (ans->field == -1)
-		ans->field = 0;
-	if (ans->field != -1)
-		if (ans->specific == 0 || ans->specific == 1)
-			return (ans->putlen + ans->field + 1);
-		else
-			return (ans->putlen + ans->field);
-	else
-		if (ans->specific == 0 || ans->specific == 1)
-			return (ans->putlen + 1);
-		else
-			return (ans->putlen + ans->field);
+	return (return_num);
 }
 
 //mode==0 -> 最小フィールド幅　mode==1 -> 精度　*.*
@@ -518,7 +533,7 @@ int main()
 	//printf("                          %d\n", cnt);
 	//cnt = printf("[%-10c]\n", 'a');
 	//printf("                          %d\n", cnt);
-	//cnt = ft_printf("[%0-10.5c]\n", 'a');
+	//cnt = printf("[%0-10.5c]\n", 'a');
 	//printf("                          %d\n", cnt);
 
 	//printf("-------------ft_printf-----char-------\n");
@@ -540,8 +555,8 @@ int main()
 	//printf("                          %d\n", cnt);
 	//cnt = printf("[%-10s]\n", "abc");
 	//printf("                          %d\n", cnt);
-	//cnt = printf("%.3s", NULL);
-	//printf("                          %d\n", cnt);
+	cnt = printf("%%04.5i 42 == |%04.5i|", 42);
+	printf("                          %d\n", cnt);
 
 	//printf("--------------ft_printf------str--------\n");
 	//cnt = ft_printf("[%s]\n", "abc");
@@ -552,8 +567,8 @@ int main()
 	//printf("                          %d\n", cnt);
 	//cnt = ft_printf("[%-10s]\n", "abc");
 	//printf("                          %d\n", cnt);
-	//cnt = ft_printf("%.3s", NULL);
-	//printf("                          %d\n", cnt);
+	cnt = ft_printf("%%04.5i 42 == |%04.5i|", 42);
+	printf("                          %d\n", cnt);
 
 
 	//printf("------------printf----%%----------------\n");
@@ -644,41 +659,41 @@ int main()
 	//cnt = ft_printf("%-8.5d", 34);
 	//printf("                          %d\n", cnt);
 
-	printf("------------printf----unsignedint----------------\n");
-	cnt = printf("[%x]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = printf("[%10x]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = printf("[%-10u]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = printf("[%10.5X]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = printf("[%010x]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = printf("[%u]\n", 4294967295);
-	printf("                          %d\n", cnt);
-	cnt = printf("[%-10X]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = printf("this %x number", 0);
-	printf("                          %d\n", cnt);
+	//printf("------------printf----unsignedint----------------\n");
+	//cnt = printf("[%x]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%10x]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%-10x]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%10.5X]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%010x]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%x]\n", 4294967295);
+	//printf("                          %d\n", cnt);
+	//cnt = printf("[%-10X]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = printf("%.5p", 0);
+	//printf("                          %d\n", cnt);
 
-	printf("------------ft_printf----unsignedint----------------\n");
-	cnt = ft_printf("[%x]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%10x]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%-10u]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%10.5X]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%010x]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%u]\n", 4294967295);
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("[%-10X]\n", 123);
-	printf("                          %d\n", cnt);
-	cnt = ft_printf("this %x number", 0);
-	printf("                          %d\n", cnt);
+	//printf("------------ft_printf----unsignedint----------------\n");
+	//cnt = ft_printf("[%x]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%10x]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%-10x]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%10.5X]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%010x]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%x]\n", 4294967295);
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("[%-10X]\n", 123);
+	//printf("                          %d\n", cnt);
+	//cnt = ft_printf("%.5p", 0);
+	//printf("                          %d\n", cnt);
 
 	//printf("------------printf----adress----------------\n");
 	//char	*buf;
@@ -701,6 +716,5 @@ int main()
 	//printf("                          %d\n", cnt);
 	//cnt = ft_printf("[%-10p]\n", buf);
 	//printf("                          %d\n", cnt);
-	//cnt = ft_printf("[%020p]\n", buf);
-	//printf("                          %d\n", cnt);
 }*/
+
