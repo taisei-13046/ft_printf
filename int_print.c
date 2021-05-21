@@ -4,7 +4,7 @@ void	ft_putnbr(t_flag *ans, long long int n, int mode, int *return_num)
 {
 	char	num;
 
-	if (ans->acc == 0 && ans->field != -1 && n == 0)
+	if (ans->acc == 0 && ans->field > 0 && n == 0)
 		*return_num += write(1, " ", 1);
 	else if (ans->acc == 0 && n == 0)
 		return ;
@@ -36,6 +36,8 @@ void	ft_write_field(t_flag *ans, int mode, int flag, int *return_num)
 		if (flag == 1)
 			ans->field -= (ans->acc + 1);
 	}
+	else if (mode == 0 && ans->acc > ans->field)
+		ans->field = 0;
 	else if (mode == 0 && ans->field > ans->putlen)
 		ans->field -= ans->putlen;
 	else if (mode == 1 && (ans->field > ans->putlen && ans->acc < ans->field))
@@ -56,6 +58,8 @@ void	ft_write_zero(t_flag *ans, int mode, int flag, int *return_num)
 	int	i;
 
 	i = 0;
+	if (flag == 1)
+		*return_num += write(1, "-", 1);
 	if ((mode == 0 || mode == 1 ) && ans->acc > ans->putlen)
 	{
 		if (flag == 0)
@@ -74,37 +78,41 @@ void	ft_write_zero(t_flag *ans, int mode, int flag, int *return_num)
 		while (i++ < ans->field)
 			*return_num += write(1, "0", 1);
 	}
-	else if (mode == 2)
-	{
-		ans->acc -= ans->putlen;
-		if (!ans->flag[1])
-			ans->field -= ans->acc;
-		while (i++ < ans->acc)
-			*return_num += write(1, "0", 1);
-	}
+}
+
+void	ft_write_zero_acc(t_flag *ans, int *return_num)
+{
+	int	i;
+
+	i = 0;
+	ans->acc -= ans->putlen;
+	if (!ans->flag[1])
+		ans->field -= ans->acc;
+	while (i++ < ans->acc)
+		*return_num += write(1, "0", 1);
 }
 
 void	int_print(va_list *ap, t_flag *ans, int *return_num)
 {
 	long long	num;
-	static int	flag;
+	int			flag;
 
+	flag = 0;
 	num = va_arg(*ap, int);
 	ans->putlen = int_count(num);
-	if (CHECK_MINUS)
+	if (num < 0 && ((ans->flag[0] && ans->field > ans->putlen) \
+		|| (ans->acc > ans->putlen)))
 		flag = 1;
 	if (!ans->flag[1] && !ans->flag[0])
 		ft_write_field(ans, 0, flag, return_num);
 	if (!ans->flag[1] && ans->flag[0] && ans->acc != -1)
 		ft_write_field(ans, 1, flag, return_num);
 	if (flag == 1)
-		*return_num += write(1, "-", 1);
-	if (flag == 1)
 		ft_write_zero(ans, 0, flag, return_num);
 	else if (ans->flag[0])
 		ft_write_zero(ans, 1, flag, return_num);
 	else if (ans->acc > ans->putlen)
-		ft_write_zero(ans, 2, flag, return_num);
+		ft_write_zero_acc(ans, return_num);
 	if (flag == 1)
 		ft_putnbr(ans, num, 0, return_num);
 	else
