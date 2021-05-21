@@ -51,12 +51,31 @@ void	ft_putnbr_un(t_flag *ans, unsigned long long n, int *return_num)
 			buf[i] = change_large[j];
 		i++;
 	}
-		buf[i] = '\0';
+	buf[i] = '\0';
 	while (i-- > 0)
 		*return_num += write(1, &buf[i], 1);
 }
 
 void	unsigned_print(va_list *ap, t_flag *ans, int *return_num)
+{
+	unsigned long long	num;
+
+	num = va_arg(*ap, unsigned int);
+	ans->putlen = sixteen_count(num, ans);
+	if (!ans->flag[1] && !ans->flag[0])
+		ft_write_field(ans, 0, 0, return_num);
+	if (!ans->flag[1] && ans->flag[0] && ans->acc != -1)
+		ft_write_field(ans, 1, 0, return_num);
+	if (ans->flag[0])
+		ft_write_zero(ans, 1, 0, return_num);
+	else if (ans->acc > ans->putlen)
+		ft_write_zero_acc(ans, return_num);
+	ft_putnbr_un(ans, num, return_num);
+	if (ans->flag[1])
+		ft_write_field(ans, 2, 0, return_num);
+}
+
+void	addres_print(va_list *ap, t_flag *ans, int *return_num)
 {
 	long long unsigned	num;
 
@@ -66,31 +85,12 @@ void	unsigned_print(va_list *ap, t_flag *ans, int *return_num)
 		ft_write_field(ans, 0, 0, return_num);
 	if (!ans->flag[1] && ans->flag[0] && ans->acc != -1)
 		ft_write_field(ans, 1, 0, return_num);
-	if (ans->flag[0])
-		ft_write_zero(ans, 1, 0, return_num);
-	else if (ans->acc > ans->putlen)
-		ft_write_zero(ans, 2, 0, return_num);
-		ft_putnbr_un(ans, num, return_num);
-	if (ans->flag[1])
-		ft_write_field(ans, 2, 0, return_num);
-}
-
-void	addres_print(va_list *ap, t_flag *ans, int *return_num)
-{
-	long long unsigned	num;
-
-	num = va_arg(*ap, long);
-	ans->putlen = sixteen_count(num, ans);
-	if (!ans->flag[1] && !ans->flag[0])
-		ft_write_field(ans, 0, 0, return_num);
-	if (!ans->flag[1] && ans->flag[0] && ans->acc != -1)
-		ft_write_field(ans, 1, 0, return_num);
 	*return_num += write(1, "0x", 2);
 	if (ans->flag[0])
 		ft_write_zero(ans, 1, 0, return_num);
 	else if (ans->acc > ans->putlen)
-		ft_write_zero(ans, 2, 0, return_num);
-		ft_putnbr_un(ans, num, return_num);
+		ft_write_zero_acc(ans, return_num);
+	ft_putnbr_un(ans, num, return_num);
 	if (ans->flag[1])
 		ft_write_field(ans, 2, 0, return_num);
 }
@@ -98,12 +98,11 @@ void	addres_print(va_list *ap, t_flag *ans, int *return_num)
 void	unsigned_int_print(va_list *ap, t_flag *ans, int *return_num)
 {
 	long long	num;
-	static int	flag;
+	int			flag;
 
-	num = va_arg(*ap, long);
+	flag = 0;
+	num = va_arg(*ap, unsigned int);
 	ans->putlen = int_count(num);
-	if (CHECK_MINUS)
-		flag = 1;
 	if (!ans->flag[1] && !ans->flag[0])
 		ft_write_field(ans, 0, flag, return_num);
 	if (!ans->flag[1] && ans->flag[0] && ans->acc != -1)
@@ -115,7 +114,7 @@ void	unsigned_int_print(va_list *ap, t_flag *ans, int *return_num)
 	else if (ans->flag[0])
 		ft_write_zero(ans, 1, flag, return_num);
 	else if (ans->acc > ans->putlen)
-		ft_write_zero(ans, 2, flag, return_num);
+		ft_write_zero_acc(ans, return_num);
 	if (flag == 1)
 		ft_putnbr(ans, num, 0, return_num);
 	else
