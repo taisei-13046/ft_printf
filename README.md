@@ -15,10 +15,7 @@ ft_printf("%d\n", 42);
 ft_printf("%#10.*X\n", 25, 42);
 >> 0X000000000000000000000002A
 ```
-```
-ft_printf("%010b\n", 42);
->> 0000101010
-```
+
 
 ## Details
 - Width managed
